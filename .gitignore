@@ -1,0 +1,15 @@
+build/
+install/
+log/
+*.engine
+*.plan
+datasets/
+*.mp4
+__pycache__/
+*.pyc
+.venv/
+firmware/**/build/
+*.elf
+*.bin
+*.hex
+.vscode/
