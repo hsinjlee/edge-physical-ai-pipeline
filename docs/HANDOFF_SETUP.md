@@ -116,9 +116,10 @@ hook=".git/hooks/pre-commit"
 cat > "$hook" <<'HOOK'
 #!/bin/sh
 email=$(git config user.email)
-case "$email" in
-  *redacted*|*Redacted*) echo "BLOCKED: work email on personal repo"; exit 1;;
-esac
+if [ "$email" != "rlee4408@gmail.com" ]; then
+  echo "BLOCKED: wrong git identity for this repo ($email)"
+  exit 1
+fi
 HOOK
 chmod +x "$hook"
 echo "hook installed"
@@ -174,7 +175,7 @@ git add CLAUDE.md && git commit -m "claude code context + rules" && git push
 # SESSION 2 — WSL (~20 min)
 
 The WSL machine has BOTH identities, so here we use `~/p` + automatic separation.
-Everything under `~/p/` commits as hsinjlee; everything else (e.g. `~/projects`) stays redacted.
+Everything under `~/p/` commits as hsinjlee; everything else (e.g. `~/projects`) stays on the other identity.
 
 ```bash
 # 1. basics
@@ -213,7 +214,7 @@ cd edge-physical-ai-pipeline
 
 # 6. verify BOTH identities on this machine
 git config user.email                  # ✅ rlee4408@gmail.com
-cd ~/projects/<any-work-repo> && git config user.email   # ✅ redacted@example.com
+cd ~/projects/<any-other-repo> && git config user.email   # ✅ the other identity's email
 ```
 
 Install Claude Code the same way as Session 1 step 8 — it reads the committed CLAUDE.md automatically, no reconfiguration. WSL done.

@@ -30,8 +30,8 @@ those files for the current week's scope before starting work — do not build a
 - **WSL**: software-only. No flashing, USB, or camera work here. Repo lives under `~/p/` so git
   identity is scoped automatically via `includeIf` — never suggest `--global` git config changes on this
   machine, since it also holds a separate identity outside `~/p/`.
-- `scripts/install-hooks.sh` installs a pre-commit hook that blocks commits made under a `*redacted*` email
-  on this repo — this is intentional and should not be bypassed or removed.
+- `scripts/install-hooks.sh` installs a pre-commit hook that blocks commits made under any git identity
+  other than the personal one — this is intentional and should not be bypassed or removed.
 
 ## Hand-write vs. delegate
 

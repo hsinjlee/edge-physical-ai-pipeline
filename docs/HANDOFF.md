@@ -29,5 +29,6 @@ Decisions made:
 - Verify Docker + `./scripts/dev-shell.sh` there too (native X11 path in the script is untested).
 
 ## Open items / watch-outs
+- **History was rewritten on 2026-07-17** (wording cleanup + force push). On the home machine, before doing anything else: `git fetch origin && git reset --hard origin/main`, then re-run `./scripts/install-hooks.sh` (the hook script changed).
 - `dev-shell.sh` GUI passthrough: WSLg path written but untested; native X11 path untested.
 - Nothing else pending — working tree was clean at handoff.
