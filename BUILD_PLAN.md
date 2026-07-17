@@ -2,7 +2,7 @@
 
 Goal: a working micro-ROS sensor pipeline — **ESP32/STM32 nodes publishing real sensor data → Jetson Orin Nano running TensorRT inference → results on ROS 2 topics** — with everything reproducible from this repo.
 
-Weekly rhythm: wsl (WSL) = write code with Claude Code; home (Ubuntu) = flash, wire, test on hardware. Morning blocks only after the job-hunt minimum is met.
+Weekly rhythm: WSL = write code with Claude Code; home (Ubuntu) = flash, wire, test on hardware. Morning blocks only after the job-hunt minimum is met.
 
 ---
 

@@ -1,7 +1,7 @@
 # HANDOFF — current state & next steps
 
 > Update this file at the end of every work session (stand-up rule: commit + push).
-> Last updated: 2026-07-17 (wsl WSL)
+> Last updated: 2026-07-17 (WSL)
 
 ## Where we are
 
@@ -17,7 +17,7 @@ Decisions made:
 
 ## Next steps
 
-### WSL WSL (blocker to clear first)
+### WSL (blocker to clear first)
 1. **Enable Docker Desktop → Settings → Resources → WSL integration** for this Ubuntu distro — `docker` is not usable from WSL until then.
 2. Run `./scripts/dev-shell.sh` — first run builds the image (~3 GB pull). Verify inside: `ros2 topic list` shows `/parameter_events` and `/rosout`.
 

@@ -27,9 +27,9 @@ those files for the current week's scope before starting work — do not build a
 
 - **Home Ubuntu**: hardware machine. Flashing MCUs, wiring, camera/servo work, Jetson access. Personal
   git identity only (`hsinjlee <rlee4408@gmail.com>`).
-- **WSL WSL**: software-only. No flashing, USB, or camera work here. Repo lives under `~/p/` so git
+- **WSL**: software-only. No flashing, USB, or camera work here. Repo lives under `~/p/` so git
   identity is scoped automatically via `includeIf` — never suggest `--global` git config changes on this
-  machine, since it also holds a separate work identity outside `~/p/`.
+  machine, since it also holds a separate identity outside `~/p/`.
 - `scripts/install-hooks.sh` installs a pre-commit hook that blocks commits made under a `*redacted*` email
   on this repo — this is intentional and should not be bypassed or removed.
 
@@ -54,4 +54,4 @@ rest is fair game to delegate:
 ## Constraints
 
 - Never commit `*.engine`, `datasets/`, or video files (already covered by `.gitignore`).
-- Don't add camera, servo, or flashing steps to anything that runs on the wsl WSL machine.
+- Don't add camera, servo, or flashing steps to anything that runs on the WSL machine.

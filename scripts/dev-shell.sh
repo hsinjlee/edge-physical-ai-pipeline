@@ -17,7 +17,7 @@ if ! docker image inspect "$IMAGE" >/dev/null 2>&1 || [ "${REBUILD:-0}" = "1" ];
         "$REPO_ROOT/docker"
 fi
 
-# GUI passthrough for rqt/rviz: WSLg (wsl) exposes sockets under /mnt/wslg,
+# GUI passthrough for rqt/rviz: WSLg exposes sockets under /mnt/wslg,
 # native Ubuntu (home) only has the X11 socket — mount whichever exists.
 GUI_ARGS=(-e DISPLAY="${DISPLAY:-:0}")
 [ -d /tmp/.X11-unix ] && GUI_ARGS+=(-v /tmp/.X11-unix:/tmp/.X11-unix)

@@ -2,7 +2,7 @@
 
 Your actual layout:
 - **Home Ubuntu:** personal machine only → repo lives in `~/Documents`, simple global identity
-- **WSL WSL:** two identities on one machine → repo lives in `~/p`, automatic separation
+- **WSL:** two identities on one machine → repo lives in `~/p`, automatic separation
 
 GitHub repo already exists (empty). Ignore all command boxes on the GitHub page — this guide replaces them.
 
@@ -108,7 +108,7 @@ Jetson Orin Nano · STM32F429ZI · ESP32 · USB camera · hobby servos · RTX 40
 EOF
 ```
 
-WSL safety hook (does nothing at home — it ships to the wsl machine, where Session 2 installs it):
+Identity safety hook (does nothing at home — it ships to the WSL machine, where Session 2 installs it):
 ```bash
 cat > scripts/install-hooks.sh <<'EOF'
 #!/bin/sh
@@ -156,8 +156,8 @@ cat >> CLAUDE.md <<'EOF'
 
 ## Standing rules (do not remove)
 - Git identity: hsinjlee <rlee4408@gmail.com> ONLY. Never suggest --global git config
-  changes on the wsl machine.
-- WSL (wsl) is SOFTWARE-ONLY: no flashing, USB, or camera there. Hardware happens on
+  changes on the WSL machine.
+- WSL is SOFTWARE-ONLY: no flashing, USB, or camera there. Hardware happens on
   home Ubuntu and the Jetson only.
 - I hand-write: micro-ROS node lifecycle/QoS, TensorRT INT8 calibration, policy inference
   loop, safety/watchdog. Claude Code writes: CMake/package.xml, launch files, Dockerfiles,
@@ -171,9 +171,9 @@ git add CLAUDE.md && git commit -m "claude code context + rules" && git push
 
 ---
 
-# SESSION 2 — WSL WSL (~20 min, next time at work)
+# SESSION 2 — WSL (~20 min)
 
-The wsl machine has BOTH identities, so here we use `~/p` + automatic separation.
+The WSL machine has BOTH identities, so here we use `~/p` + automatic separation.
 Everything under `~/p/` commits as hsinjlee; everything else (e.g. `~/projects`) stays redacted.
 
 ```bash
@@ -191,7 +191,7 @@ git config --global includeIf.gitdir:~/p/.path ~/.gitconfig-hsinjlee
 # 3. new SSH key for this machine (keys don't travel between machines)
 ssh-keygen -t ed25519 -C "rlee4408@gmail.com" -f ~/.ssh/id_ed25519_hsinjlee
 cat ~/.ssh/id_ed25519_hsinjlee.pub
-#    → add on GitHub (incognito browser, signed in as hsinjlee), title: wsl-wsl
+#    → add on GitHub (incognito browser, signed in as hsinjlee), title: wsl
 
 # 4. SSH shortcut
 mkdir -p ~/.ssh && chmod 700 ~/.ssh
