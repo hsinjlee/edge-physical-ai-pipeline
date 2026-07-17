@@ -14,3 +14,4 @@ with an Isaac Sim / OpenUSD digital twin.
 ## Hardware
 Jetson Orin Nano · STM32F429ZI · ESP32 · USB camera · hobby servos · RTX 4060 (training)
 
+
