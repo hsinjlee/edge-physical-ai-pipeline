@@ -1,0 +1,35 @@
+# ROS 2 Humble dev environment (Week 1+, both machines).
+# Humble matches Ubuntu 22.04, the same base as JetPack 6 on the Jetson Orin Nano,
+# so the dev container and the Orin run the same ROS 2 distro.
+FROM osrf/ros:humble-desktop
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    nano \
+    vim \
+    sudo \
+    python3-pip \
+    python3-colcon-common-extensions \
+    python3-rosdep \
+    python3-vcstool \
+    ros-humble-rqt-graph \
+    && rm -rf /var/lib/apt/lists/*
+
+# Non-root user with the host's UID/GID so files created in the mounted repo
+# keep host ownership (passed in by scripts/dev-shell.sh).
+ARG USERNAME=dev
+ARG UID=1000
+ARG GID=1000
+RUN groupadd --gid "${GID}" "${USERNAME}" \
+    && useradd --uid "${UID}" --gid "${GID}" -m -s /bin/bash "${USERNAME}" \
+    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/"${USERNAME}" \
+    && chmod 440 /etc/sudoers.d/"${USERNAME}"
+
+USER ${USERNAME}
+WORKDIR /repo
+
+RUN echo 'source /opt/ros/humble/setup.bash' >> ~/.bashrc \
+    && echo '[ -f /repo/ros2_ws/install/setup.bash ] && source /repo/ros2_ws/install/setup.bash' >> ~/.bashrc
+
+CMD ["bash"]
