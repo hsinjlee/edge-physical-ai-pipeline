@@ -1,55 +1,65 @@
 # HANDOFF — current state & next steps
 
 > Update this file at the end of every work session (stand-up rule: commit + push).
-> Last updated: 2026-08-06 (WSL)
+> Last updated: 2026-09-11 (WSL)
 
 ## Where we are
 
-**Phase 1, Week 1** (see BUILD_PLAN.md) — container verified on both machines' relevant sides, `talker.py` in progress (not yet written).
+**Phase 1, Week 1** (see BUILD_PLAN.md) — `talker.py` hand-written, built, and functionally validated. Blocked on confirming a WSL2/Docker idle-throttling fix before doing the final clean soak test; one known bug in `talker.py`'s shutdown path still needs a hand-written fix.
 
 Done:
 - Repo skeleton, plans, CLAUDE.md, identity setup on both machines ✅
-- `docker/Dockerfile.dev` + `scripts/dev-shell.sh` — **build-tested and working on WSL**: Docker Desktop WSL integration confirmed enabled (`docker run hello-world` succeeds), image `edge-physical-ai-dev` builds clean, `./scripts/dev-shell.sh` drops into the container, and inside it `ros2 topic list` shows exactly `/parameter_events` and `/rosout` as expected. Re-confirmed working again this session (image still present, no rebuild needed).
-- `ros2_ws/src/edge_bringup/` package **scaffolded** (`package.xml`, `setup.py`, `setup.cfg`, `resource/edge_bringup` marker, empty `edge_bringup/__init__.py`) — boilerplate only, per the hand-write/delegate split in CLAUDE.md. `setup.py` already declares `console_scripts` entry points for `talker`/`listener` pointing at modules that don't exist yet.
-- **Home Ubuntu synced up to the rewritten history**: `git reset --hard origin/main` done, `./scripts/install-hooks.sh` re-run and verified (blocks commits unless `user.email` is `rlee4408@gmail.com`).
-- This session (WSL): worked through `rclpy` doc-lookup approach (`help()` on `Node.create_publisher`/`create_timer`, `QoSProfile`, and the `demo_nodes_py` reference location) and started hand-writing `talker.py` — **no file written yet**, still at the lookup/planning stage inside the container.
+- `docker/Dockerfile.dev` + `scripts/dev-shell.sh` — build-tested and working on WSL (carried over from prior sessions).
+- `ros2_ws/src/edge_bringup/` package scaffolded — `package.xml` already declares `<depend>rclpy</depend>` / `<depend>std_msgs</depend>`; `setup.py` entry points for `talker`/`listener` in place.
+- **`talker.py` hand-written this session** (`ros2_ws/src/edge_bringup/edge_bringup/talker.py`): `Talker(Node)` with explicit `QoSProfile` (RELIABLE / KEEP_LAST depth=10 / VOLATILE, reasoned through rather than defaulted), `create_publisher(String, 'chatter', qos)`, `create_timer(1.0, self.on_timer)` for 1 Hz, `on_timer` builds/publishes/logs a `hello world: N` message. `main()` does `rclpy.init` → construct → `try: rclpy.spin(node) finally: destroy_node(); rclpy.shutdown()`.
+- **Build + run verified**: `colcon build --packages-select edge_bringup` succeeds (only harmless setuptools dash-vs-underscore deprecation warnings). `ros2 run edge_bringup talker` runs; `ros2 topic list` shows `/chatter` alongside `/parameter_events`/`/rosout`; `ros2 topic hz /chatter` measured a clean `average rate: 1.000` (std dev <1.3ms) for the first several samples — **this is the real proof the node logic is correct.**
+- Still untracked/uncommitted: `ros2_ws/src/edge_bringup/edge_bringup/talker.py` (not yet committed — do so as part of closing out this session).
+
+Bugs found this session:
+1. **Known, not yet fixed — `rclpy.shutdown()` double-call on Ctrl+C.** `main()`'s `finally` block unconditionally calls `rclpy.shutdown()`, but `rclpy.init()` installs its own SIGINT handler that shuts the context down *before* the `KeyboardInterrupt` from the interrupted `spin()` wait call reaches your `finally`. Result: `RCLError: failed to shutdown: rcl_shutdown already called on the given context`. Fix (per CLAUDE.md hand-write policy, this is node-lifecycle code — write it yourself, don't delegate):
+   ```python
+   finally:
+       node.destroy_node()
+       if rclpy.ok():
+           rclpy.shutdown()
+   ```
+2. **Environment issue, in progress — periodic multi-minute publish stalls.** `ros2 topic hz /chatter` showed the rate suddenly crater from `1.000` to `~0.03–0.07` with `max` gaps of ~147.9s and ~294.9s (a clean 2x multiple) recurring throughout a run. Not a code bug — the *first* several samples were clean 1 Hz, and a `create_timer` callback has no mechanism to silently skip 147 seconds. Diagnosed as the WSL2 VM / Docker Desktop backend being paused during idle periods.
+   - Disabled Docker Desktop's **Resource Saver** setting (Settings → General) — did **not** fully fix it; stall pattern recurred identically afterward.
+   - Created `C:\Users\F042\.wslconfig` (didn't exist before) with:
+     ```ini
+     [wsl2]
+     vmIdleTimeout=-1
+     ```
+     to also disable WSL2's own VM idle-suspend timeout.
+   - **Not yet verified.** Applying this requires `wsl --shutdown` run from an actual **Windows PowerShell/cmd window** (not a WSL bash shell — bash can't shut down the VM it's running inside of). First attempt at retesting found the old `edge-dev` container still `Up` with the `talker` process (PIDs 38/39) still alive inside it, which means the WSL shutdown either wasn't run yet or didn't reach Docker Desktop's backend — so this fix is unconfirmed as of this handoff.
 
 Decisions made:
 - ROS distro = **Humble** everywhere in the pipeline (matches JetPack 6 / Ubuntu 22.04 on the Orin). Native ROS installs on host machines are fine for tutorials but stay OUT of the project graph — project nodes always run inside `scripts/dev-shell.sh`.
 - Work directly on `main`, no feature branches for now.
+- QoS reasoning for `chatter`: RELIABLE (every message matters for now, revisit for high-rate sensor topics later), KEEP_LAST depth=10 (no replay-everything requirement), VOLATILE (late subscribers don't need history replayed — that's for something like a static config/URDF topic instead).
 
 ## Next steps
 
 ### WSL — pick this up next
-1. **HAND-WRITE** (don't delegate) `ros2_ws/src/edge_bringup/edge_bringup/talker.py`, then `listener.py` — still not started as of this handoff. Enter the container with `./scripts/dev-shell.sh`, `cd ros2_ws/src/edge_bringup/edge_bringup`, and write `talker.py` there.
-   - Doc lookups run **inside the container** only (`rclpy` isn't installed on the host) — `python3 -c "import rclpy.node; help(rclpy.node.Node.create_publisher)"` etc., or a second shell into the same running container via `docker exec -it edge-dev bash`.
-   - Shape: `Node` subclass, explicit `QoSProfile` (reliability/history/durability — don't take the bare-int default without being able to justify it), `create_publisher(String, 'chatter', qos)`, `create_timer(period, cb)`, publish + log in the callback, `rclpy.spin()` in `main()`.
-   - `listener.py` mirrors it with `create_subscription` — QoS must be **compatible** with the talker's or messages silently drop with no error.
-2. Build with colcon inside the container: `cd /repo/ros2_ws && colcon build --packages-select edge_bringup && source install/setup.bash`.
-3. Run `ros2 run edge_bringup talker` / `listener` in separate container shells; inspect with `ros2 topic echo/hz/info`.
-4. Week 1 exit test: explain out loud what DDS gives you over raw MQTT — QoS (reliability/history/durability), the single-threaded executor spin loop, and timer callback rate vs achieved rate.
+1. **Confirm the WSL2/Docker idle-throttle fix**, from a real Windows PowerShell/cmd window (not this WSL bash):
+   - Close all WSL terminal windows first.
+   - Run `wsl --shutdown` in PowerShell.
+   - Reopen a WSL terminal, then `docker ps -a --filter "name=edge-dev"` should come back empty (confirms the VM actually restarted and the old `--rm` container is gone).
+2. Redo the full flow: `./scripts/dev-shell.sh` → `cd ros2_ws` → `source install/setup.bash` → `ros2 run edge_bringup talker`; second shell via `docker exec -it edge-dev bash` → `source install/setup.bash` → `ros2 topic hz /chatter`, soaked for **5+ minutes** this time (the stall didn't appear until well past the first minute previously).
+3. Once the rate stays a clean `1.000` throughout — **hand-write** the `if rclpy.ok():` guard fix into `talker.py`'s `main()` (see bug #1 above), rebuild, and verify Ctrl+C now exits cleanly with no traceback.
+4. Commit `talker.py` (plus this handoff update).
+5. **HAND-WRITE** `listener.py` next, mirroring `talker.py`'s structure with `create_subscription` instead of `create_publisher`/`create_timer` — QoS must be **compatible** with the talker's (same reliability/durability, or subscriber's must be a subset) or messages silently drop with no error, no exception.
+6. Build (`colcon build --packages-select edge_bringup`), run talker + listener in separate shells, confirm messages flow end to end.
+7. Week 1 exit test: explain out loud what DDS gives you over raw MQTT — QoS (reliability/history/durability), the single-threaded executor spin loop, and timer callback rate vs achieved rate (now with a real example of *why* achieved rate can lie to you — the idle-throttle stall — as a bonus talking point).
 
 ### Home Ubuntu — still pending from before
-1. **Install Docker first — attempted this session, did NOT complete.** Ran `apt-get update` without `sudo` → `Permission denied` on the apt lock file, so nothing was actually installed (`docker-ce` absent from `dpkg -l`, `/usr/bin/docker` doesn't exist). Redo the full block with `sudo` on **every** `apt-get`/`install`/`tee` line:
-   ```bash
-   sudo apt-get update
-   sudo apt-get install -y ca-certificates curl
-   sudo install -m 0755 -d /etc/apt/keyrings
-   sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-   sudo chmod a+r /etc/apt/keyrings/docker.asc
-   echo \
-     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-     $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-     sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-   sudo apt-get update
-   sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-   sudo usermod -aG docker $USER
-   ```
-   OS is Ubuntu 26.04 (`resolute`) — confirmed Docker's apt repo already lists `resolute`, no codename fallback needed. After `usermod`, log out/in (or `newgrp docker`) before `docker run hello-world` will work without `sudo`.
+1. **Docker install still incomplete** — see prior handoff for the full `sudo apt-get`/keyring block; not reattempted this session.
 2. Once Docker's up there, same talker/listener task as the WSL section above — whichever machine gets there first, don't duplicate.
 
 ## Open items / watch-outs
-- **Docker install incomplete on Home Ubuntu** — first attempt failed on a missing `sudo`, see Home Ubuntu step 1 above.
+- **WSL2/Docker Desktop idle-throttling** — root cause of the multi-minute publish stalls; Resource Saver disabled, `.wslconfig` `vmIdleTimeout=-1` added but **unconfirmed**. If the stall recurs even after a real `wsl --shutdown`, the next thing to check is Windows' own USB/PCIe selective-suspend or sleep settings, or whether Docker Desktop has a separate "pause idle containers" toggle beyond Resource Saver.
+- **`rclpy.shutdown()` double-call bug** in `talker.py` — identified, fix known, not yet applied (see bug #1 above). Don't let this slip into `listener.py` too — same guard needed there.
+- **Docker install incomplete on Home Ubuntu** — unchanged from before.
 - `dev-shell.sh` GUI passthrough: WSLg path written but untested; native X11 path untested on Home Ubuntu.
-- `edge_bringup` colcon build will fail until `talker.py`/`listener.py` exist (entry points reference them) — expected, not a bug.
-- Common gotcha hit this session: running `rclpy`/`ros2`/`colcon` commands on the raw WSL **host** shell instead of inside the container — `rclpy` only exists inside `edge-physical-ai-dev`. Always check the prompt (`dev@docker-desktop` = inside container, `f042@...` = host).
+- Common gotcha, recurred this session: running `ros2`/`colcon` commands on the raw WSL **host** shell instead of inside the container. Always check the prompt (`dev@docker-desktop` = inside container, `f042@...` = host).
+- `edge_bringup` colcon build will fail until `listener.py` exists if you try `ros2 run edge_bringup listener` (entry point references it) — expected, not a bug, until step 5 above is done.
