@@ -1,7 +1,7 @@
 # HANDOFF — current state & next steps
 
 > Update this file at the end of every work session (stand-up rule: commit + push).
-> Last updated: 2026-09-11 (WSL)
+> Last updated: 2026-10-19 (Home Ubuntu)
 
 ## Where we are
 
@@ -13,7 +13,8 @@ Done:
 - `ros2_ws/src/edge_bringup/` package scaffolded — `package.xml` already declares `<depend>rclpy</depend>` / `<depend>std_msgs</depend>`; `setup.py` entry points for `talker`/`listener` in place.
 - **`talker.py` hand-written this session** (`ros2_ws/src/edge_bringup/edge_bringup/talker.py`): `Talker(Node)` with explicit `QoSProfile` (RELIABLE / KEEP_LAST depth=10 / VOLATILE, reasoned through rather than defaulted), `create_publisher(String, 'chatter', qos)`, `create_timer(1.0, self.on_timer)` for 1 Hz, `on_timer` builds/publishes/logs a `hello world: N` message. `main()` does `rclpy.init` → construct → `try: rclpy.spin(node) finally: destroy_node(); rclpy.shutdown()`.
 - **Build + run verified**: `colcon build --packages-select edge_bringup` succeeds (only harmless setuptools dash-vs-underscore deprecation warnings). `ros2 run edge_bringup talker` runs; `ros2 topic list` shows `/chatter` alongside `/parameter_events`/`/rosout`; `ros2 topic hz /chatter` measured a clean `average rate: 1.000` (std dev <1.3ms) for the first several samples — **this is the real proof the node logic is correct.**
-- Still untracked/uncommitted: `ros2_ws/src/edge_bringup/edge_bringup/talker.py` (not yet committed — do so as part of closing out this session).
+- `talker.py` is committed and pushed (pulled onto Home Ubuntu 2026-10-19). The `rclpy.ok()` shutdown fix is still not applied.
+- **Home Ubuntu Docker install done (2026-10-19).** Docker Engine 29.9.1 from Docker's official apt repo, service `active`, user `casa` added to the `docker` group. Host is Ubuntu **26.04 "resolute"**, which Docker's repo doesn't ship yet, so `/etc/apt/sources.list.d/docker.list` is pinned to **`noble`**. The packages installed and the service runs fine on that pin.
 
 Bugs found this session:
 1. **Known, not yet fixed — `rclpy.shutdown()` double-call on Ctrl+C.** `main()`'s `finally` block unconditionally calls `rclpy.shutdown()`, but `rclpy.init()` installs its own SIGINT handler that shuts the context down *before* the `KeyboardInterrupt` from the interrupted `spin()` wait call reaches your `finally`. Result: `RCLError: failed to shutdown: rcl_shutdown already called on the given context`. Fix (per CLAUDE.md hand-write policy, this is node-lifecycle code — write it yourself, don't delegate):
@@ -52,14 +53,18 @@ Decisions made:
 6. Build (`colcon build --packages-select edge_bringup`), run talker + listener in separate shells, confirm messages flow end to end.
 7. Week 1 exit test: explain out loud what DDS gives you over raw MQTT — QoS (reliability/history/durability), the single-threaded executor spin loop, and timer callback rate vs achieved rate (now with a real example of *why* achieved rate can lie to you — the idle-throttle stall — as a bonus talking point).
 
-### Home Ubuntu — still pending from before
-1. **Docker install still incomplete** — see prior handoff for the full `sudo apt-get`/keyring block; not reattempted this session.
-2. Once Docker's up there, same talker/listener task as the WSL section above — whichever machine gets there first, don't duplicate.
+### Home Ubuntu — pick this up next
+1. **Log out and back in (or reboot)** so the new `docker` group membership applies. Restart Claude Code afterwards so its shell gets the group too.
+2. Verify without sudo: `docker run hello-world` should print "Hello from Docker!". If you see `permission denied ... docker.sock`, the group hasn't applied yet; go back to step 1.
+3. `./scripts/dev-shell.sh`: the first run builds the image from `osrf/ros:humble-desktop` (several GB, slow). The prompt changes to `dev@casa-G5-KF5:/repo$` when you're inside the container. This is also the first real test of the native X11 GUI passthrough path.
+4. Inside the container: `cd ros2_ws && colcon build --packages-select edge_bringup && source install/setup.bash`, then `ros2 run edge_bringup talker`. In a second shell (`docker exec -it edge-dev bash`), run `ros2 topic hz /chatter`. Native Linux has no WSL2 idle-suspend, so a **5+ minute soak here** tells you whether the stall was WSL-specific. If the rate stays a clean 1.000, that's strong evidence.
+5. Then continue with WSL steps 3–7 above (hand-write the shutdown fix, then `listener.py`), on whichever machine you're at. Don't do the same step on both.
 
 ## Open items / watch-outs
 - **WSL2/Docker Desktop idle-throttling** — root cause of the multi-minute publish stalls; Resource Saver disabled, `.wslconfig` `vmIdleTimeout=-1` added but **unconfirmed**. If the stall recurs even after a real `wsl --shutdown`, the next thing to check is Windows' own USB/PCIe selective-suspend or sleep settings, or whether Docker Desktop has a separate "pause idle containers" toggle beyond Resource Saver.
 - **`rclpy.shutdown()` double-call bug** in `talker.py` — identified, fix known, not yet applied (see bug #1 above). Don't let this slip into `listener.py` too — same guard needed there.
-- **Docker install incomplete on Home Ubuntu** — unchanged from before.
+- **Home Ubuntu Docker repo is pinned to `noble`** because the host runs 26.04 "resolute". Once Docker publishes a `resolute` suite, switch `/etc/apt/sources.list.d/docker.list` over to it.
+- **Claude Code can't run `sudo` on Home Ubuntu** because it has no TTY for the password prompt. Run sudo steps yourself in a terminal and paste the output back.
 - `dev-shell.sh` GUI passthrough: WSLg path written but untested; native X11 path untested on Home Ubuntu.
 - Common gotcha, recurred this session: running `ros2`/`colcon` commands on the raw WSL **host** shell instead of inside the container. Always check the prompt (`dev@docker-desktop` = inside container, `f042@...` = host).
 - `edge_bringup` colcon build will fail until `listener.py` exists if you try `ros2 run edge_bringup listener` (entry point references it) — expected, not a bug, until step 5 above is done.
