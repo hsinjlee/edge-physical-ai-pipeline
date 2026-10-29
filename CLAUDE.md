@@ -33,29 +33,6 @@ those files for the current week's scope before starting work — do not build a
 - `scripts/install-hooks.sh` installs a pre-commit hook that blocks commits made under any git identity
   other than the personal one — this is intentional and should not be bypassed or removed.
 
-## Hand-write vs. delegate
-
-This is a deliberate learning project — some code must be written by hand for interview fluency, the
-rest is fair game to delegate:
-
-For anything in the hand-write list, don't just hand over a fix — walk through what the code means and
-why it's written that way, so the user builds real understanding instead of copying a patch.
-
-**Hand-write (do not generate this code):**
-
-- micro-ROS node lifecycle, executor setup, QoS choices
-- TensorRT engine/context/bindings code and INT8 calibration logic
-- Policy inference loop and safety/watchdog logic
-- ROS 2 graph design decisions (topics, rates, QoS)
-
-**Safe to write/generate:**
-
-- CMakeLists.txt / package.xml, colcon workspace scaffolding
-- Launch files, URDF/USD boilerplate, Dockerfiles
-- Benchmark scripts, plotting, tegrastats parsers
-- ONNX export scripts, dataset conversion glue
-- README/docs drafting from the user's notes
-
 ## Constraints
 
 - Never commit `*.engine`, `datasets/`, or video files (already covered by `.gitignore`).

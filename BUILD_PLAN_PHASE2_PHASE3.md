@@ -82,20 +82,9 @@ Goal: evolve the repo from "edge AI pipeline" into a miniature Physical AI stack
 
 ## Claude Code Delegation Map
 
-Per established methodology — hands-on for interview-critical concepts, delegate plumbing:
-
-**Type it yourself (interview fluency):**
-- micro-ROS node lifecycle, executor, QoS settings
-- TensorRT engine building + INT8 calibration logic
-- Policy inference loop and safety/watchdog logic
-- ROS 2 graph design decisions (topics, rates, QoS)
-
-**Delegate to Claude Code:**
-- CMakeLists, package.xml, colcon workspace scaffolding
-- Launch files, URDF/USD boilerplate, Dockerfiles
-- Benchmark scripts, plotting, tegrastats parsers
-- ONNX export scripts, dataset conversion glue
-- README/docs drafting from your notes
+All code is delegated to Claude Code (the earlier hand-write rule was dropped on 2026-10-29). Still be able
+to explain the interview-critical pieces: micro-ROS node lifecycle/executor/QoS, TensorRT engine building +
+INT8 calibration, the policy inference loop and safety/watchdog logic, and ROS 2 graph design decisions.
 
 **Where Claude Code runs:**
 - Ubuntu desktop (casa-G5-KF5): main workspace, training scripts, USD work

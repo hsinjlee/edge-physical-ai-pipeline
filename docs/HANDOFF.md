@@ -23,13 +23,13 @@ Done:
   - QoS (matching talker), `create_subscription`, and the `if rclpy.ok():` guard were already correct.
 - **talker + listener build + run verified on Home Ubuntu (2026-10-29).** `colcon build --packages-select edge_bringup` clean (only setuptools `script-dir` deprecation warnings). Listener received `hello world: 0`–`5` in order, ~1 ms after each publish. (Ran both nodes in one detached container via `docker exec`, SIGINT sent with `timeout -s INT`.)
 - **Clean Ctrl+C exit fix** (hand-written by the user, both nodes): the `rclpy.ok()` guard only removed the *second* error (`RCLError`); the original `KeyboardInterrupt` still escaped `try/finally` (finally runs cleanup but doesn't catch) and printed a traceback. Added `except KeyboardInterrupt: pass` between `try` and `finally` — `except` decides which exits are normal, `finally` still cleans up on *every* exit path. Re-tested: no traceback on either node.
-- **CLAUDE.md updated** (committed in `22953df`): for hand-write-list code, walk the user through what the code means and why instead of handing over a fix. Also fixed two markdownlint blanks-around-lists warnings.
+- **CLAUDE.md updated** (committed in `22953df`): for hand-write-list code, walk the user through what the code means and why instead of handing over a fix. Also fixed two markdownlint blanks-around-lists warnings. *(Superseded 2026-10-29: hand-write rule removed — see Decisions.)*
 
 Decisions made:
 - ROS distro = **Humble** everywhere in the pipeline (matches JetPack 6 / Ubuntu 22.04 on the Orin). Native ROS installs on host machines stay OUT of the project graph — project nodes always run inside `scripts/dev-shell.sh`.
 - Work directly on `main`, no feature branches for now.
 - QoS for `chatter`: RELIABLE, KEEP_LAST depth=10, VOLATILE.
-- CLAUDE.md hand-write policy clarified (see above).
+- **Hand-write rule dropped (2026-10-29):** all remaining code is delegated to Claude Code. Removed from CLAUDE.md and both build plans.
 - WSL2/Docker idle-throttle investigation deprioritized — native soak proves the code is fine.
 
 ## Next steps

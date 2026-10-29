@@ -8,7 +8,7 @@ Weekly rhythm: WSL = write code with Claude Code; home (Ubuntu) = flash, wire, t
 
 ## Week 1 — ROS 2 fundamentals (software only, no hardware needed)
 - [ ] Docker dev environment working on both machines (`docker/Dockerfile.dev`, `scripts/dev-shell.sh`)
-- [ ] Core concepts hands-on (type these yourself, don't delegate): nodes, topics, publishers/subscribers with `rclpy`; services vs topics; QoS basics (reliability, depth)
+- [ ] Core concepts hands-on: nodes, topics, publishers/subscribers with `rclpy`; services vs topics; QoS basics (reliability, depth)
 - [ ] Write a minimal talker/listener pair in `ros2_ws/src/edge_bringup`; build with colcon; inspect with `ros2 topic echo/hz/info`
 - [ ] Exit test: explain out loud (interview practice) what DDS gives you over raw MQTT
 
@@ -27,7 +27,7 @@ Weekly rhythm: WSL = write code with Claude Code; home (Ubuntu) = flash, wire, t
 ## Week 4 — STM32F429ZI micro-ROS node (the differentiator)
 - [ ] micro-ROS on STM32 with FreeRTOS; serial transport first (simplest), Ethernet/UDP as stretch
 - [ ] Port one sensor (or synthetic data at fixed rate) to the STM32 node
-- [ ] Hand-write the node lifecycle and executor setup — this is interview-critical
+- [ ] Node lifecycle and executor setup — be able to explain it (interview-critical)
 - [ ] Exit test: both MCU nodes visible in one `ros2 node list`; explain serial vs UDP transport tradeoffs
 
 ## Week 5 — Jetson Orin Nano bring-up + TensorRT basics
@@ -39,7 +39,7 @@ Weekly rhythm: WSL = write code with Claude Code; home (Ubuntu) = flash, wire, t
 ## Week 6 — Inference node on the Orin
 - [ ] ROS 2 node on Orin (`edge_perception` package): subscribe to input, run TensorRT engine, publish results
 - [ ] For now input can be synthetic/file-based (camera arrives in Phase 2) — the point is the ROS 2 ↔ TensorRT plumbing
-- [ ] Hand-write the inference loop (context, bindings, streams); delegate the packaging/launch files
+- [ ] Inference loop (context, bindings, streams) + packaging/launch files — be able to explain the loop
 - [ ] Measure end-to-end: MCU sensor topic → Orin node reaction latency
 
 ## Week 7 — Integration: the full graph
@@ -56,10 +56,6 @@ Weekly rhythm: WSL = write code with Claude Code; home (Ubuntu) = flash, wire, t
 - [ ] Retro: what to carry into Phase 2 (see BUILD_PLAN_PHASE2_PHASE3.md)
 
 ---
-
-## Hand-write vs delegate (standing rule, also in CLAUDE.md)
-- **You type:** micro-ROS node lifecycle, executor, QoS choices, TensorRT engine/context/bindings code
-- **Claude Code:** CMakeLists/package.xml, Dockerfiles, launch files, benchmark scripts, plotting, docs drafts
 
 ## Exit criteria for Phase 1
 Two MCU nodes (one wireless, one wired/serial) publishing real data into a ROS 2 graph where a Jetson TensorRT node consumes and republishes inference results — all launched from one command, all documented with measured numbers.
