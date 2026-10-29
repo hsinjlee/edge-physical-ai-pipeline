@@ -1,11 +1,11 @@
 # HANDOFF — current state & next steps
 
 > Update this file at the end of every work session (stand-up rule: commit + push).
-> Last updated: 2026-10-29 (Home Ubuntu) — talker/listener build + run verified, clean Ctrl+C exit fix committed
+> Last updated: 2026-10-29 end of session (Home Ubuntu) — Week 1 build items done; exit-test quiz in progress (resume at Q2)
 
 ## Where we are
 
-**Phase 1, Week 1** (see BUILD_PLAN.md) — `talker.py` and `listener.py` are both hand-written, **build-verified and run-verified together on Home Ubuntu** (2026-10-29), and both now exit cleanly on Ctrl+C (no traceback). All Week 1 build/run steps are done, plus `ros2 topic echo/hz/info` inspection and a `~/reset_count` service (services vs topics) — only the Week 1 exit test (explain DDS vs MQTT) remains.
+**Phase 1, Week 1** (see BUILD_PLAN.md) — `talker.py` and `listener.py` are both hand-written, **build-verified and run-verified together on Home Ubuntu** (2026-10-29), and both now exit cleanly on Ctrl+C (no traceback). All Week 1 build/run steps are done, plus `ros2 topic echo/hz/info` inspection and a `~/reset_count` service (services vs topics) — only the Week 1 exit test (explain DDS vs MQTT) remains. It's being run as a 6-question quiz with Claude (teach on gaps); **Q1 done, resume at Q2**.
 
 Done:
 - Repo skeleton, plans, CLAUDE.md, identity setup on both machines ✅
@@ -38,8 +38,19 @@ Decisions made:
 
 Don't duplicate steps across machines. To build/run: `scripts/dev-shell.sh`, then `cd ros2_ws && source /opt/ros/humble/setup.bash && colcon build --packages-select edge_bringup && source install/setup.bash` (never on the raw host shell).
 
-1. Week 1 exit test: explain out loud what DDS gives you over raw MQTT — QoS (reliability/history/durability), the single-threaded executor spin loop, and timer callback rate vs achieved rate (the WSL idle-throttle stall is good bonus material). Bonus: why `except KeyboardInterrupt` + `finally` rather than cleanup inside `except`.
-2. Then move on to the next week's scope in BUILD_PLAN.md.
+1. **Resume the Week 1 exit-test quiz at Q2** — ask Claude to "continue the quiz at Q2". Format: one question at a time, user answers in own words; if the user doesn't know, teach the gap, then a quick check question. Plan:
+   - ~~Q1 Architecture~~ ✅ (taught — see quiz notes below)
+   - **Q2 QoS** (asked, not yet answered): a) what RELIABLE / KEEP_LAST depth=10 / VOLATILE each mean; b) 30 Hz camera stream — keep RELIABLE or switch to BEST_EFFORT, and why. Also: QoS compatibility (why the listener had to match the talker).
+   - Q3 Typed messages: DDS/IDL types (`std_msgs/String`) vs MQTT opaque byte payloads.
+   - Q4 Topics vs services (+ actions): use the `~/reset_count` service as the example.
+   - Q5 Executor: single-threaded `rclpy.spin()` loop, slow callback blocks the rest, timer rate vs achieved rate (WSL stall as the real example). Bonus: `except KeyboardInterrupt` + `finally` vs cleanup in `except`.
+   - Q6 When MQTT wins: WAN/cloud, constrained links; DDS multicast discovery doesn't cross subnets → bridge into Week 2 (why micro-ROS needs an agent).
+2. After the quiz passes, tick the Week 1 exit-test box in BUILD_PLAN.md.
+3. Week 2 (micro-ROS + ESP32): start by adding the micro-ROS agent + ESP-IDF toolchain (to `Dockerfile.dev` or a separate agent container). Flashing happens on Home Ubuntu only.
+
+Quiz notes so far (2026-10-29):
+- **Q1 — taught from scratch** (user didn't know). MQTT = central broker, 2 hops, broker is a single point of failure; DDS = no broker, discovery via UDP multicast (why `--network host`), then direct 1-hop peer-to-peer. Check question: user got "broker crash stops everything" and "DDS survives a node crash" right, but **wrongly said an ordinary node crash breaks MQTT** — corrected: a non-broker node crash is equivalent in both; the difference is only the broker. Worth a quick re-check tomorrow.
+- **Acronyms (user asked):** DDS = Data Distribution Service (OMG standard; Fast DDS default in Humble, Cyclone, RTI Connext; defense/industrial roots). MQTT = originally MQ Telemetry Transport (IBM 1999, oil-pipeline satellite telemetry; now officially just a name, OASIS standard). Origin explains design: few devices + thin link + central collector → broker; many real-time peers + no central failure → peer-to-peer.
 
 ## Open items / watch-outs
 - **WSL2/Docker Desktop idle-throttling — deprioritized, unresolved, confirmed WSL-only.** Multi-minute publish stalls (~150s, ~300s, one ~597s) persisted through: Resource Saver off, `.wslconfig` `vmIdleTimeout=-1` + verified `wsl --shutdown`, full Docker Desktop restart, Windows USB selective-suspend off, PCIe Link State Power Management off, sleep/screen timeout Never. Next unexplored lead if ever needed: `%APPDATA%\Docker\settings-store.json` for an `autoPauseTimeoutSeconds`-type key.
