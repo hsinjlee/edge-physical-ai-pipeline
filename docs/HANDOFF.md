@@ -5,7 +5,7 @@
 
 ## Where we are
 
-**Phase 1, Week 1** (see BUILD_PLAN.md) — `talker.py` and `listener.py` are both hand-written, **build-verified and run-verified together on Home Ubuntu** (2026-10-29), and both now exit cleanly on Ctrl+C (no traceback). All Week 1 build/run steps are done — only the Week 1 exit test (explain DDS vs MQTT) remains.
+**Phase 1, Week 1** (see BUILD_PLAN.md) — `talker.py` and `listener.py` are both hand-written, **build-verified and run-verified together on Home Ubuntu** (2026-10-29), and both now exit cleanly on Ctrl+C (no traceback). All Week 1 build/run steps are done, plus `ros2 topic echo/hz/info` inspection and a `~/reset_count` service (services vs topics) — only the Week 1 exit test (explain DDS vs MQTT) remains.
 
 Done:
 - Repo skeleton, plans, CLAUDE.md, identity setup on both machines ✅
@@ -23,6 +23,8 @@ Done:
   - QoS (matching talker), `create_subscription`, and the `if rclpy.ok():` guard were already correct.
 - **talker + listener build + run verified on Home Ubuntu (2026-10-29).** `colcon build --packages-select edge_bringup` clean (only setuptools `script-dir` deprecation warnings). Listener received `hello world: 0`–`5` in order, ~1 ms after each publish. (Ran both nodes in one detached container via `docker exec`, SIGINT sent with `timeout -s INT`.)
 - **Clean Ctrl+C exit fix** (hand-written by the user, both nodes): the `rclpy.ok()` guard only removed the *second* error (`RCLError`); the original `KeyboardInterrupt` still escaped `try/finally` (finally runs cleanup but doesn't catch) and printed a traceback. Added `except KeyboardInterrupt: pass` between `try` and `finally` — `except` decides which exits are normal, `finally` still cleans up on *every* exit path. Re-tested: no traceback on either node.
+- **Topic inspection verified (2026-10-29):** `ros2 topic info -v /chatter` shows the talker's QoS (RELIABLE / VOLATILE; depth reports UNKNOWN — normal for remote endpoints), `echo` shows the sequence, `hz` = `average rate: 1.000`, std dev ~0.15 ms.
+- **Services vs topics: `~/reset_count` service added to the talker** (`std_srvs/Trigger`, `std_srvs` added to package.xml). `ros2 service call /talker/reset_count std_srvs/srv/Trigger` → `success=True, message='count reset from 4 to 0'`; publishing continued from 0. Topic = one-way stream, many subscribers, fire-and-forget; service = request/response with a reply, one server.
 - **CLAUDE.md updated** (committed in `22953df`): for hand-write-list code, walk the user through what the code means and why instead of handing over a fix. Also fixed two markdownlint blanks-around-lists warnings. *(Superseded 2026-10-29: hand-write rule removed — see Decisions.)*
 
 Decisions made:

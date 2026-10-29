@@ -7,9 +7,9 @@ Weekly rhythm: WSL = write code with Claude Code; home (Ubuntu) = flash, wire, t
 ---
 
 ## Week 1 — ROS 2 fundamentals (software only, no hardware needed)
-- [ ] Docker dev environment working on both machines (`docker/Dockerfile.dev`, `scripts/dev-shell.sh`)
-- [ ] Core concepts hands-on: nodes, topics, publishers/subscribers with `rclpy`; services vs topics; QoS basics (reliability, depth)
-- [ ] Write a minimal talker/listener pair in `ros2_ws/src/edge_bringup`; build with colcon; inspect with `ros2 topic echo/hz/info`
+- [x] Docker dev environment working on both machines (`docker/Dockerfile.dev`, `scripts/dev-shell.sh`)
+- [x] Core concepts hands-on: nodes, topics, publishers/subscribers with `rclpy`; services vs topics; QoS basics (reliability, depth)
+- [x] Write a minimal talker/listener pair in `ros2_ws/src/edge_bringup`; build with colcon; inspect with `ros2 topic echo/hz/info`
 - [ ] Exit test: explain out loud (interview practice) what DDS gives you over raw MQTT
 
 ## Week 2 — micro-ROS concepts + ESP32 first node
