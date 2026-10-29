@@ -35,6 +35,8 @@ def main(args=None):
     node = Talker()
     try:
         rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass  # Ctrl+C is a normal way to stop; exit quietly
     finally:
         node.destroy_node()
         if rclpy.ok():
