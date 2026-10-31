@@ -55,3 +55,10 @@ Quiz notes so far (2026-10-29, 2026-10-31):
   - E-stop → RELIABLE is right, but **RELIABLE ≠ 100% delivery** (can't cross a dead link) → real systems add heartbeat/watchdog (silence = stop), deadline/liveliness QoS, hardware e-stop. Revisit in Week 4 (STM32 actuators).
   - BEST_EFFORT-camera / RELIABLE-subscriber mismatch: user proposed making the **publisher** RELIABLE — corrected: fix the **subscriber** to BEST_EFFORT (don't degrade the sensor stream; it's usually not your node anyway).
   - Also: TRANSIENT_LOCAL must be requested by the subscriber too; publisher depth = how many past msgs a late joiner gets.
+
+## Open items / watch-outs
+- **WSL2/Docker Desktop idle-throttling — deprioritized, unresolved, confirmed WSL-only.** Multi-minute publish stalls (~150s, ~300s, one ~597s) persisted through: Resource Saver off, `.wslconfig` `vmIdleTimeout=-1` + verified `wsl --shutdown`, full Docker Desktop restart, Windows USB selective-suspend off, PCIe Link State Power Management off, sleep/screen timeout Never. Next unexplored lead if ever needed: `%APPDATA%\Docker\settings-store.json` for an `autoPauseTimeoutSeconds`-type key.
+- **Home Ubuntu Docker repo is pinned to `noble`** because the host runs 26.04 "resolute". Switch to `resolute` once Docker publishes it.
+- **Claude Code can't run `sudo` on Home Ubuntu** (no TTY for the password prompt). Run sudo steps yourself and paste the output back.
+- `dev-shell.sh` GUI passthrough: WSLg path untested; native X11 path untested on Home Ubuntu.
+- Common gotcha: running `ros2`/`colcon` on the raw **host** shell instead of inside the container. Always check the prompt (`f042@...` = WSL host).
