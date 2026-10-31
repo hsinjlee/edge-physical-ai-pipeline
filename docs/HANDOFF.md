@@ -1,11 +1,11 @@
 # HANDOFF — current state & next steps
 
 > Update this file at the end of every work session (stand-up rule: commit + push).
-> Last updated: 2026-10-29 end of session (Home Ubuntu) — Week 1 build items done; exit-test quiz in progress (resume at Q2)
+> Last updated: 2026-10-31 end of session (Home Ubuntu) — Week 1 build items done; exit-test quiz in progress (Q1–Q2 done, resume at Q3)
 
 ## Where we are
 
-**Phase 1, Week 1** (see BUILD_PLAN.md) — `talker.py` and `listener.py` are both hand-written, **build-verified and run-verified together on Home Ubuntu** (2026-10-29), and both now exit cleanly on Ctrl+C (no traceback). All Week 1 build/run steps are done, plus `ros2 topic echo/hz/info` inspection and a `~/reset_count` service (services vs topics) — only the Week 1 exit test (explain DDS vs MQTT) remains. It's being run as a 6-question quiz with Claude (teach on gaps); **Q1 done, resume at Q2**.
+**Phase 1, Week 1** (see BUILD_PLAN.md) — `talker.py` and `listener.py` are both hand-written, **build-verified and run-verified together on Home Ubuntu** (2026-10-29), and both now exit cleanly on Ctrl+C (no traceback). All Week 1 build/run steps are done, plus `ros2 topic echo/hz/info` inspection and a `~/reset_count` service (services vs topics) — only the Week 1 exit test (explain DDS vs MQTT) remains. It's being run as a 6-question quiz with Claude (teach on gaps); **Q1–Q2 done, resume at Q3**.
 
 Done:
 - Repo skeleton, plans, CLAUDE.md, identity setup on both machines ✅
@@ -38,23 +38,20 @@ Decisions made:
 
 Don't duplicate steps across machines. To build/run: `scripts/dev-shell.sh`, then `cd ros2_ws && source /opt/ros/humble/setup.bash && colcon build --packages-select edge_bringup && source install/setup.bash` (never on the raw host shell).
 
-1. **Resume the Week 1 exit-test quiz at Q2** — ask Claude to "continue the quiz at Q2". Format: one question at a time, user answers in own words; if the user doesn't know, teach the gap, then a quick check question. Plan:
+1. **Resume the Week 1 exit-test quiz at Q3** — ask Claude to "continue the quiz at Q3". Start with the quick Q1 re-check (see quiz notes). Format: one question at a time, user answers in own words; if the user doesn't know, teach the gap, then a quick check question. Plan:
    - ~~Q1 Architecture~~ ✅ (taught — see quiz notes below)
-   - **Q2 QoS** (asked, not yet answered): a) what RELIABLE / KEEP_LAST depth=10 / VOLATILE each mean; b) 30 Hz camera stream — keep RELIABLE or switch to BEST_EFFORT, and why. Also: QoS compatibility (why the listener had to match the talker).
-   - Q3 Typed messages: DDS/IDL types (`std_msgs/String`) vs MQTT opaque byte payloads.
+   - ~~Q2 QoS~~ ✅ (taught — see quiz notes below)
+   - **Q3 Typed messages** (asked 2026-10-31, not yet answered): DDS/IDL types (`std_msgs/String`) vs MQTT opaque byte payloads. a) what a ROS 2 subscriber knows about the data that an MQTT subscriber doesn't; b) what happens in each system when the publisher changes the message format (adds a field).
    - Q4 Topics vs services (+ actions): use the `~/reset_count` service as the example.
    - Q5 Executor: single-threaded `rclpy.spin()` loop, slow callback blocks the rest, timer rate vs achieved rate (WSL stall as the real example). Bonus: `except KeyboardInterrupt` + `finally` vs cleanup in `except`.
    - Q6 When MQTT wins: WAN/cloud, constrained links; DDS multicast discovery doesn't cross subnets → bridge into Week 2 (why micro-ROS needs an agent).
 2. After the quiz passes, tick the Week 1 exit-test box in BUILD_PLAN.md.
 3. Week 2 (micro-ROS + ESP32): start by adding the micro-ROS agent + ESP-IDF toolchain (to `Dockerfile.dev` or a separate agent container). Flashing happens on Home Ubuntu only.
 
-Quiz notes so far (2026-10-29):
+Quiz notes so far (2026-10-29, 2026-10-31):
 - **Q1 — taught from scratch** (user didn't know). MQTT = central broker, 2 hops, broker is a single point of failure; DDS = no broker, discovery via UDP multicast (why `--network host`), then direct 1-hop peer-to-peer. Check question: user got "broker crash stops everything" and "DDS survives a node crash" right, but **wrongly said an ordinary node crash breaks MQTT** — corrected: a non-broker node crash is equivalent in both; the difference is only the broker. Worth a quick re-check tomorrow.
 - **Acronyms (user asked):** DDS = Data Distribution Service (OMG standard; Fast DDS default in Humble, Cyclone, RTI Connext; defense/industrial roots). MQTT = originally MQ Telemetry Transport (IBM 1999, oil-pipeline satellite telemetry; now officially just a name, OASIS standard). Origin explains design: few devices + thin link + central collector → broker; many real-time peers + no central failure → peer-to-peer.
-
-## Open items / watch-outs
-- **WSL2/Docker Desktop idle-throttling — deprioritized, unresolved, confirmed WSL-only.** Multi-minute publish stalls (~150s, ~300s, one ~597s) persisted through: Resource Saver off, `.wslconfig` `vmIdleTimeout=-1` + verified `wsl --shutdown`, full Docker Desktop restart, Windows USB selective-suspend off, PCIe Link State Power Management off, sleep/screen timeout Never. Next unexplored lead if ever needed: `%APPDATA%\Docker\settings-store.json` for an `autoPauseTimeoutSeconds`-type key.
-- **Home Ubuntu Docker repo is pinned to `noble`** because the host runs 26.04 "resolute". Switch to `resolute` once Docker publishes it.
-- **Claude Code can't run `sudo` on Home Ubuntu** (no TTY for the password prompt). Run sudo steps yourself and paste the output back.
-- `dev-shell.sh` GUI passthrough: WSLg path untested; native X11 path untested on Home Ubuntu.
-- Common gotcha: running `ros2`/`colcon` on the raw **host** shell instead of inside the container. Always check the prompt (`f042@...` = WSL host).
+- **Q2 — taught from scratch (2026-10-31)** (user didn't know). Covered: reliability (RELIABLE = ack + resend, BEST_EFFORT = send once), history KEEP_LAST depth=N (buffer, also the resend window) vs KEEP_ALL, durability (VOLATILE = late joiners see only new msgs; TRANSIENT_LOCAL = latched, e.g. `/robot_description`); 30 Hz camera → BEST_EFFORT (fresh frame > resent stale one; `SensorDataQoS`); offered-vs-requested compatibility (BEST_EFFORT pub + RELIABLE sub = silently no messages, check `ros2 topic info -v`). Check question: all 3 basically right, two refinements:
+  - E-stop → RELIABLE is right, but **RELIABLE ≠ 100% delivery** (can't cross a dead link) → real systems add heartbeat/watchdog (silence = stop), deadline/liveliness QoS, hardware e-stop. Revisit in Week 4 (STM32 actuators).
+  - BEST_EFFORT-camera / RELIABLE-subscriber mismatch: user proposed making the **publisher** RELIABLE — corrected: fix the **subscriber** to BEST_EFFORT (don't degrade the sensor stream; it's usually not your node anyway).
+  - Also: TRANSIENT_LOCAL must be requested by the subscriber too; publisher depth = how many past msgs a late joiner gets.
